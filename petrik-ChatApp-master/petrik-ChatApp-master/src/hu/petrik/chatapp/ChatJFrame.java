@@ -87,6 +87,7 @@ public class ChatJFrame extends javax.swing.JFrame {
                             @Override
                             public void run() {
                                 messagesTextArea.append(string + "\n");
+                             
                             }
                         });
                     }
@@ -99,6 +100,7 @@ public class ChatJFrame extends javax.swing.JFrame {
                 
                 try {
                     client.connect();
+                    
                 } catch (IOException ex) {
                     showErrorMessage(ex.getMessage());
                 }

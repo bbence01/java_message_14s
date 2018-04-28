@@ -5,6 +5,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -13,11 +18,28 @@ import java.util.Random;
 class Client {
     private Socket socket;
     private ChatServer server;
+    
     private Object syncRoot = new Object();
     private OutputStreamWriter writer;
     
-    private String nickname;
+    String nickname;
     private static Random random = new Random();
+    
+    
+     // Idő hozzáadás
+    //lekéri a jelenlegi időt
+    // megformázza a jelenlegi időt 
+    private  Timestamp timestamp = new Timestamp(System.currentTimeMillis()); 
+    private static final SimpleDateFormat sdf = new SimpleDateFormat("HH:mm"); 
+    
+    // Command lista
+     List<String> commands = Arrays.asList(
+             "/q = kilépés", 
+             "/nick = névváltozattás",
+             "/list = felhasználok listája",
+             "/com = parancsok listája", 
+             "/whisper = üzenet egy kiválasztott felhasználónak",
+             "/kick = felhasználó kirugása"  ); 
     
     /**
      * Létrehoz egy kliens objektumot a megadott socket-hez.
@@ -56,7 +78,10 @@ class Client {
                 }
                 
                 switch (parancs) {
+                    
+                    
                     case "/q":
+                        server.send(" [ " + sdf.format(timestamp) + " ] " + "*** "+ nickname + " :  'Kilépett'  " + line + "\n");
                         socket.close();
                         return;
                         
@@ -67,10 +92,46 @@ class Client {
                             nickname = ujNicknev;
                         }
                         
+                        
+                         break ;
+                         
+                    case "/list":
+                        
+                    
+                         for(int i=0; i<server.clients.size(); i++ )
+                          {
+         
+                              server.send( "list" + " "+ "/whisper" + " " + nickname + "  " + server.clients.get(i).nickname + "\n");
+                              
+                          }
+                        
+                            
                         break;
                         
+                        case "/com":
+                            
+                         for(int i=0; i<commands.size();i++ )
+                          {
+         
+                              server.send("  " +" /whisper " + nickname + " ' "  + nickname + " " + commands.get(i) +" " + " \n ");
+                              
+                              }
+                         
+                            break;
+                            
+                            
+                        case "/slap":
+                            String slaped = parameter.trim();
+                               server.send(" At  [ " + sdf.format(timestamp) + " ]  " + nickname + " slaps " + slaped + " around a bit with a large trout  " + "\n");
+                            
+                            
+                            break;
+                                
+                    
+                        
+                        
                     default:
-                        server.send(nickname + ": " + line + "\n");
+                        server.send(" [ " + sdf.format(timestamp) + " ] "+ nickname + ": " + line + "\n");
                         break;
                 }
             }

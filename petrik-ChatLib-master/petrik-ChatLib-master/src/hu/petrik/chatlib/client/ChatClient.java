@@ -1,5 +1,6 @@
 package hu.petrik.chatlib.client;
 
+import hu.petrik.chatlib.server.ChatServer;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -20,6 +21,8 @@ public class ChatClient {
     private Socket socket;
     private OutputStreamWriter writer;
     private BufferedReader reader;
+    
+     private ChatServer server;
 
     /**
      * Létrehozza a chat klienst a megadott beállításokkal.
@@ -50,6 +53,7 @@ public class ChatClient {
         writer = new OutputStreamWriter(stream);
         reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         startListening();
+        
     }
     
     /**

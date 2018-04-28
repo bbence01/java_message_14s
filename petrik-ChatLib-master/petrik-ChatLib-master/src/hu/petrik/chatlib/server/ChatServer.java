@@ -4,9 +4,13 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CopyOnWriteArrayList;
+
 
 /**
  * Chat szerver osztály, amely hálózaton keresztül több klienst képes összekapcsolni
@@ -18,8 +22,15 @@ public class ChatServer {
     private final int port;
     // Sima ArrayList helyett ezt a szálbiztos alternatívát használjuk.
     // Így a send függvényt nem kell külön szinkronizálni.
-    private final List<Client> clients = new CopyOnWriteArrayList<>();
+    final List<Client> clients = new CopyOnWriteArrayList<>();
+ 
+
     private ServerSocket socket;
+    
+     private ChatServer server;
+         private  Timestamp timestamp = new Timestamp(System.currentTimeMillis()); 
+    private static final SimpleDateFormat sdf = new SimpleDateFormat("HH:mm"); 
+   
     
     /**
      * Létrehoz egy szerver objektumot a megadott beállításokkal.
@@ -46,6 +57,8 @@ public class ChatServer {
     public void listen() throws IOException {
         socket = new ServerSocket(port, -1, InetAddress.getByName(address));
         Socket connection;
+      
+        
         
         // Csak kivétellel tudunk kilépni - ez a tervezett működés.
         while (true) {
@@ -54,14 +67,19 @@ public class ChatServer {
             Client client = new Client(connection, this);
             clients.add(client);
             
+              String welcome = " [ " + sdf.format(timestamp) + " ] "+ client.nickname + " 'Belépett' "  + "\n";
+           
+            
             // Minden kliensnek indítsunk egy új szálat, mert a start()
             // függvényük blokkoló
             Thread t = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        System.out.println("Client connected");
+                        System.out.println("Client connected");                         
                         client.start();
+                       server.send(welcome);
+                       
                     }
                     catch (IOException ex) {
                         System.out.println("Client error");
@@ -85,9 +103,71 @@ public class ChatServer {
      * @throws IOException 
      */
     void send(String message) throws IOException {
-        for (Client client: clients) {
-            client.send(message);
-        }
+       
+        
+        // ha az üzenetben van "whisper",
+        //mehnézi hogy tartalmaz-e felhasználónevet,
+        // ha van a felhasználok között ilyen elküldi neki 
+        if ( message.contains("/whisper") )
+        {
+            
+                
+                 for(int i=0; i<clients.size();i++ )
+                 {
+                     
+                     if(message.contains(clients.get(i).nickname) )
+                        {
+                            if(message.contains("list")){
+                                 String[] darabolt = message.split(" ", 3);
+                                 String resz1 = darabolt[0];
+                                 String resz2 = darabolt[1];
+                                 String resz3 = darabolt[2];
+                                 
+                                 
+                               
+                                String re = " ";
+                            message.replace(resz1, re);
+                            message.replace(resz2,re);
+                            message.replace(resz3,re);
+                            
+                             
+                            }
+                            
+                               clients.get(i).send(message);
+                                   break;
+                         
+                        } 
+       
+                }
+                 
+            
+        }        
+        else if (message.contains(" /kick "))
+                {
+                     for(int i=0; i<clients.size();i++ )
+                 {
+                     
+                     if(message.contains(clients.get(i).nickname) )
+                        {
+                           clients.get(i).stop();
+                                   break;
+                        } 
+       
+                  }
+                    
+                }        
+        else
+        {
+       
+        
+          for (Client client: clients) 
+              {
+                    client.send(message);
+              }
+       }
+        
+        
+        
     }
     
     /**
